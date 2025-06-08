@@ -85,7 +85,7 @@ bool PlanetManager::update(Vector3 t_playerPos3D, Player& t_player)
         {
             coresCollected++;
             Transition::begin();
-            t_player.dropEverything();
+            // t_player.dropEverything();
             nextPlanet();
             return true;
         }

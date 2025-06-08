@@ -46,6 +46,11 @@ private:
     Texture2D hardTexture;
     Texture2D extremeTexture;
 
+    Texture2D controlsKeyboard1;
+    Texture2D controlsKeyboard2;
+    Texture2D controlsController1;
+    Texture2D controlsController2;
+
     bool checkIfAnOptionPickedup();
     static std::vector<std::shared_ptr<Button>> options;
     std::shared_ptr<Button> closestButtonToPlayer;
@@ -106,6 +111,12 @@ private:
     static void mediumEffect();
     static void hardEffect();
     static void extremeEffect();
+
+    // Controlls display animation
+    void animateControls();
+    bool controlsFirst = false;
+    static const int TIME_BETWEEN_CHANGES = 1 * 60;
+    int controlChangeTimer = 0;
 
     // Normalize to -1 to 1 range
     float normalizeSigned(float x, float t_min, float t_max) { return 2 * (x - t_min) / (t_max - t_min) - 1; }

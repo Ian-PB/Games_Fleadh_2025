@@ -40,6 +40,12 @@ void MainMenu::initialize()
     hardTexture = LoadTexture("resources/Art/2D/hard.png");
     extremeTexture = LoadTexture("resources/Art/2D/extreme.png");
 
+    controlsKeyboard1 = LoadTexture("resources/Art/2D/keyboard_controls1.png");
+    controlsKeyboard2 = LoadTexture("resources/Art/2D/keyboard_controls2.png");
+
+    controlsController1 = LoadTexture("resources/Art/2D/controller_controls1.png");
+    controlsController2 = LoadTexture("resources/Art/2D/controller_controls2.png");
+
     // Reticle
     reticleIn = LoadModel("resources/Art/3D/gyroscope1.glb");
     reticleMiddle = LoadModel("resources/Art/3D/gyroscope2.glb");
@@ -261,6 +267,8 @@ void MainMenu::draw()
             options[i]->draw();
         }
 
+        animateControls();
+
         BeginMode3D(SceneCamera::camera);
             planet.draw();
             
@@ -476,4 +484,40 @@ void MainMenu::extremeEffect()
     ParticleSpawner& particles = planet.getParticles();
     particles.clearColors();
     particles.addColor(DARKPURPLE);
+}
+
+void MainMenu::animateControls()
+{
+    if (controlChangeTimer < TIME_BETWEEN_CHANGES)
+    {
+        controlChangeTimer++;
+    }
+    else
+    {
+        controlChangeTimer = 0;
+        controlsFirst = !controlsFirst;
+    }
+
+    if (IsGamepadAvailable(0))
+    {
+        if (controlsFirst)
+        {
+            DrawTexture(controlsController1, SCREEN_WIDTH * 0.7f, SCREEN_HEIGHT * 0.35f, YELLOW);
+        }
+        else
+        {
+            DrawTexture(controlsController2, SCREEN_WIDTH * 0.7f, SCREEN_HEIGHT * 0.35f, YELLOW);
+        }
+    }
+    else
+    {
+        if (controlsFirst)
+        {
+            DrawTexture(controlsKeyboard1, SCREEN_WIDTH * 0.7f, SCREEN_HEIGHT * 0.35f, YELLOW);
+        }
+        else
+        {
+            DrawTexture(controlsKeyboard2, SCREEN_WIDTH * 0.7f, SCREEN_HEIGHT * 0.35f, YELLOW);
+        }
+    }
 }
