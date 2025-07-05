@@ -17,8 +17,8 @@ Scene SceneCamera::currentScene = Scene::MAIN_MENU;
 
 void SceneCamera::initialize()
 {
-    camera.position = {0.0f, 0.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};      // Looking at the origin
+    camera.position = {SCREEN_WIDTH / 2.0f, (SCREEN_HEIGHT / 2.0f), 10.0f};
+    camera.target = {SCREEN_WIDTH / 2.0f, (SCREEN_HEIGHT / 2.0f), 1.0f};     // Looking at the origin
     camera.up = {0.0f, 1.0f, 0.0f};          // Y-axis is up
     camera.fovy = 45.0f;                     // Field of view in degrees
     camera.projection = CAMERA_PERSPECTIVE;  // 3D perspective projection

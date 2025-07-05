@@ -43,8 +43,9 @@ void PlanetManager::init()
         randomColor.b = b;
         randomColor.a = 255;
 
-        float randX = static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_X)) - SCREEN_BOUNDS_X);
-        float randY = static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_Y)) - SCREEN_BOUNDS_Y);
+        float randX = static_cast<float>((rand() % SCREEN_WIDTH));
+        float randY = static_cast<float>((rand() % SCREEN_HEIGHT));
+        printf("Pos Plant: %f, %f", randX, randY);
 
         // Health goes from 100 up in 50
 

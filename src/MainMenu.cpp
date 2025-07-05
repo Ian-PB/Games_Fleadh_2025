@@ -69,7 +69,7 @@ void MainMenu::initialize()
 
     player.initialize({SCREEN_WIDTH / 2.0f - 30, SCREEN_HEIGHT * 0.45f});
 
-    planetPos = {0.0, -1.25, MAIN_PLANET_Z + 3};
+    planetPos = {SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f, MAIN_PLANET_Z + 3};
     planet.init(planetPos, 1, RED);
 
     DifficultyManager::setDifficulty(DifficultyManager::getDifficulty(1)); 
@@ -102,11 +102,13 @@ void MainMenu::initializeShaders()
     targetScene = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     targetBlur1 = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     targetBlur2 = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+    middleground = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Set texture filtering to smooth (GL_LINEAR)
     SetTextureFilter(targetScene.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(targetBlur1.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(targetBlur2.texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(middleground.texture, TEXTURE_FILTER_BILINEAR);
 
     Vector2 resolutionForBlur = {(float)SCREEN_WIDTH * 5, (float)SCREEN_HEIGHT * 5};
 
@@ -277,7 +279,6 @@ void MainMenu::draw()
                 animateReticle();
                 
                 Vector3 reticlePos = convertToMiddleCoords(closestButtonToPlayer->getPos());
-                reticlePos.x += 0.4f;
 
                 DrawModelWires(reticleIn, reticlePos, 0.25f, WHITE);
                 DrawModelWires(reticleMiddle, reticlePos, 0.25f, WHITE);
@@ -332,26 +333,38 @@ void MainMenu::draw()
         EndBlendMode();
     EndTextureMode();
 
-    BeginShaderMode(combineShader);
-        ClearBackground(BLANK);
+    BeginTextureMode(middleground);
+        BeginShaderMode(combineShader);
+            ClearBackground(BLANK);
 
-        // Draw non-glow objects
-        moveBackground();
-        for (int i = 0; i < 2; i ++)
-        {
-            DrawTextureEx(backgroundTexture[i], backgroundPos[i], 0, 1.0, WHITE);
-        }
+            // Draw non-glow objects
+            moveBackground();
+            for (int i = 0; i < 2; i ++)
+            {
+                DrawTextureEx(backgroundTexture[i], backgroundPos[i], 0, 1.0, WHITE);
+            }
 
-        // First, draw the normal scene
-        BeginBlendMode(BLEND_ALPHA);
-            DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
-        EndBlendMode();
+            // First, draw the normal scene
+            BeginBlendMode(BLEND_ALPHA);
+                DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
+            EndBlendMode();
 
-        // Then, add the glow effect on top using additive blending
-        BeginBlendMode(BLEND_ADDITIVE);
-           DrawTextureRec(targetBlur2.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
-        EndBlendMode();
-    EndShaderMode();
+            // Then, add the glow effect on top using additive blending
+            BeginBlendMode(BLEND_ADDITIVE);
+            DrawTextureRec(targetBlur2.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
+            EndBlendMode();
+        EndShaderMode();
+    EndTextureMode();
+
+    Rectangle src = {
+        (float)middleground.texture.width,   // x
+        0.0f,               // y
+        (float)middleground.texture.width,  // negative width → flip
+        -(float)middleground.texture.height   // height unchanged
+    };
+    BeginMode3D(SceneCamera::camera);
+        DrawBillboardRec(SceneCamera::camera, middleground.texture, src, MIDDLEGROUND_POS, {SCREEN_WIDTH/(float)SCREEN_HEIGHT, 1}, WHITE);
+    EndMode3D();
 
     DrawTextureEx(logoTexture, {0, 100}, 0, 1.0, WHITE);
 }
@@ -396,10 +409,21 @@ void MainMenu::animateReticle()
 
 Vector3 MainMenu::convertToMiddleCoords(Vector2 t_originalCoords)
 {
-    float normalizedX = normalizeSigned(t_originalCoords.x, 0.0f, SCREEN_WIDTH);
-    float normalizedY = normalizeSigned(t_originalCoords.y, 0.0f, SCREEN_HEIGHT);
-    
-    return {normalizedX * SCREEN_BOUNDS_X, -normalizedY * SCREEN_BOUNDS_Y, MIDDLEGROUND_POS.z};
+    Ray pickRay = GetMouseRay(player.getPos(), SceneCamera::camera);
+    Vector3 planeNormal = { 0, 0, 1 };
+    Vector3 planePoint = MIDDLEGROUND_POS;    // any point on your plane
+
+    float denom = Vector3Dot(pickRay.direction, planeNormal);
+    if (fabs(denom) > 1e-6f)
+    {
+        // t = distance along ray to the plane
+        float t = Vector3Dot(Vector3Subtract(planePoint, pickRay.position), planeNormal)/denom;
+        if (t >= 0)
+        {
+            return Vector3Add(pickRay.position, Vector3Scale(pickRay.direction, t));
+            // worldPos is the exact 3D point under your mouse at depth Z_PLANE
+        }
+    }
 }
 
 bool MainMenu::CheckCollisionRaySphere(Ray ray, Vector3 spherePos, float sphereRadius)

@@ -202,7 +202,8 @@ void Game::draw()
             proj.draw();
         }   
 
-        DrawBillboard(SceneCamera::camera, middleground.texture, MIDDLEGROUND_POS, 7.8f, WHITE);
+        // DrawBillboard(SceneCamera::camera, middleground.texture, MIDDLEGROUND_POS, 1, WHITE);
+        
     EndMode3D();
 }
 
@@ -341,6 +342,7 @@ void Game::drawMiddleground()
         EndShaderMode();
     EndTextureMode();
 
+    DrawTexture(middleground.texture, 0, 0, WHITE);
 }
 
 void Game::moveBackground()
