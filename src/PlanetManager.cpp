@@ -43,9 +43,10 @@ void PlanetManager::init()
         randomColor.b = b;
         randomColor.a = 255;
 
-        float randX = static_cast<float>((rand() % SCREEN_WIDTH));
-        float randY = static_cast<float>((rand() % SCREEN_HEIGHT));
-        printf("Pos Plant: %f, %f", randX, randY);
+        float randX = SceneCamera::camera.position.x;//static_cast<float>((rand() % SCREEN_WIDTH));
+        float randY = SceneCamera::camera.position.y;//static_cast<float>((rand() % SCREEN_HEIGHT));
+
+        printf("\n\nPLANET MANAGER INIT\n\n");
 
         // Health goes from 100 up in 50
 
@@ -90,6 +91,8 @@ bool PlanetManager::update(Vector3 t_playerPos3D, Player& t_player)
             nextPlanet();
             return true;
         }
+
+        printf("Planet Pos: %f", planets.size());//planets[currentPlanet].getPos().x, planets[currentPlanet].getPos().y, planets[currentPlanet].getPos().z);
     }
 
 
@@ -168,8 +171,8 @@ void PlanetManager::reset()
         randomColor.b = b;
         randomColor.a = 255;
 
-        float randX = static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_X)) - SCREEN_BOUNDS_X);
-        float randY = static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_Y)) - SCREEN_BOUNDS_Y);
+        float randX = SceneCamera::camera.position.x;//static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_X)) - SCREEN_BOUNDS_X);
+        float randY = SceneCamera::camera.position.y;//static_cast<float>((rand() % (2 * (int)SCREEN_BOUNDS_Y)) - SCREEN_BOUNDS_Y);
 
         planets[i].init({randX, randY, MAIN_PLANET_Z - (i * PLANET_SPACING)}, 100 + i * 50, randomColor);
     }

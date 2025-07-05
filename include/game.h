@@ -28,7 +28,6 @@ private:
     void initializeShaders();
 
     void drawMiddleground();
-    void drawBackground();
 
     void input();
     void mouseInput();
@@ -78,7 +77,6 @@ private:
     RenderTexture2D targetBlur2;
     
     // Billboard Textures
-    RenderTexture2D background;
     RenderTexture2D middleground;
     RenderTexture2D foreground;
 
@@ -115,7 +113,6 @@ private:
         return 2 * (x - t_min) / (t_max - t_min) - 1;
     }
     Vector3 convertToMiddleCoords(Vector2 t_originalCoords);
-    Vector2 convertToGameCoords(Vector3 t_originalCoords);
 
     float Vector3Dot(Vector3 v1, Vector3 v2) { return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; }
     bool CheckCollisionRaySphere(Ray ray, Vector3 spherePos, float sphereRadius);

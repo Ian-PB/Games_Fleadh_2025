@@ -2,6 +2,9 @@
 static int SCREEN_WIDTH = 1980;
 static int SCREEN_HEIGHT = 1080;
 
+static float WORLD_WIDTH = 0.0f;
+static float WORLD_HEIGHT = 0.0f;
+
 static const float SCREEN_BOUNDS_X = 1.0f; // 6.8f;
 static const float SCREEN_BOUNDS_Y = 1.0f; // 3.68f;
 

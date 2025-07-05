@@ -23,6 +23,15 @@ MainMenu::~MainMenu()
 
 void MainMenu::initialize()
 {
+    SceneCamera::initialize();
+
+    // Initialize the billboard size
+    float distance = Vector3Distance(SceneCamera::camera.position, MIDDLEGROUND_POS);
+    float halfFovyRad = (SceneCamera::camera.fovy * DEG2RAD) * 0.5f;
+    WORLD_HEIGHT = 2.0f * distance * tanf(halfFovyRad);
+    float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+    WORLD_WIDTH = WORLD_HEIGHT * aspect;
+
     controller.init();
     DifficultyManager::initBaseDifficulties();
 
@@ -280,9 +289,9 @@ void MainMenu::draw()
                 
                 Vector3 reticlePos = convertToMiddleCoords(closestButtonToPlayer->getPos());
 
-                DrawModelWires(reticleIn, reticlePos, 0.25f, WHITE);
-                DrawModelWires(reticleMiddle, reticlePos, 0.25f, WHITE);
-                DrawModelWires(reticleOut, reticlePos, 0.25f, WHITE);
+                DrawModelWires(reticleIn, reticlePos, 0.04f, WHITE);
+                DrawModelWires(reticleMiddle, reticlePos, 0.04f, WHITE);
+                DrawModelWires(reticleOut, reticlePos, 0.04f, WHITE);
             }
 
             // Controller cursor
@@ -357,13 +366,14 @@ void MainMenu::draw()
     EndTextureMode();
 
     Rectangle src = {
-        (float)middleground.texture.width,   // x
-        0.0f,               // y
-        (float)middleground.texture.width,  // negative width → flip
-        -(float)middleground.texture.height   // height unchanged
+        0.0f,
+        0.0f,               
+        (float)middleground.texture.width,
+        -(float)middleground.texture.height   // flipped height
     };
+
     BeginMode3D(SceneCamera::camera);
-        DrawBillboardRec(SceneCamera::camera, middleground.texture, src, MIDDLEGROUND_POS, {SCREEN_WIDTH/(float)SCREEN_HEIGHT, 1}, WHITE);
+        DrawBillboardRec(SceneCamera::camera, middleground.texture, src, MIDDLEGROUND_POS, {WORLD_WIDTH, WORLD_HEIGHT}, WHITE);
     EndMode3D();
 
     DrawTextureEx(logoTexture, {0, 100}, 0, 1.0, WHITE);
@@ -409,21 +419,27 @@ void MainMenu::animateReticle()
 
 Vector3 MainMenu::convertToMiddleCoords(Vector2 t_originalCoords)
 {
-    Ray pickRay = GetMouseRay(player.getPos(), SceneCamera::camera);
-    Vector3 planeNormal = { 0, 0, 1 };
-    Vector3 planePoint = MIDDLEGROUND_POS;    // any point on your plane
+    // The Z-depth of your middleground plane
+    const float worldZ = MIDDLEGROUND_POS.z;
 
-    float denom = Vector3Dot(pickRay.direction, planeNormal);
-    if (fabs(denom) > 1e-6f)
-    {
-        // t = distance along ray to the plane
-        float t = Vector3Dot(Vector3Subtract(planePoint, pickRay.position), planeNormal)/denom;
-        if (t >= 0)
-        {
-            return Vector3Add(pickRay.position, Vector3Scale(pickRay.direction, t));
-            // worldPos is the exact 3D point under your mouse at depth Z_PLANE
-        }
-    }
+    // Normalized Device Coordinates in range [-1, +1]
+    float ndcX = (2.0f * t_originalCoords.x / SCREEN_WIDTH)  - 1.0f;
+    float ndcY =  1.0f - (2.0f * t_originalCoords.y / SCREEN_HEIGHT);
+
+    // Camera center in world space
+    const Vector3& cam = SceneCamera::camera.position;
+
+    // Half‐sizes of your world quad at Z = worldZ
+    const float halfW = WORLD_WIDTH  * 0.5f;
+    const float halfH = WORLD_HEIGHT * 0.5f;
+
+    // Linear mapping from NDC to world X/Y
+    Vector3 worldPos;
+    worldPos.x = cam.x + ndcX * halfW;
+    worldPos.y = cam.y + ndcY * halfH;
+    worldPos.z = worldZ;
+
+    return worldPos;
 }
 
 bool MainMenu::CheckCollisionRaySphere(Ray ray, Vector3 spherePos, float sphereRadius)

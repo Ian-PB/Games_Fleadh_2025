@@ -28,6 +28,7 @@ public:
 
 private:
     static void updateShake();
+    static Vector3 baseTarget;
 
     static float shakeIntensity;
     static int shakeDuration;

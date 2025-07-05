@@ -49,6 +49,14 @@ void Game::initialize()
     // Camera initializing
     SceneCamera::initialize();
 
+    // Initialize the billboard size
+    float distance = Vector3Distance(SceneCamera::camera.position, MIDDLEGROUND_POS);
+    float halfFovyRad = (SceneCamera::camera.fovy * DEG2RAD) * 0.5f;
+    WORLD_HEIGHT = 2.0f * distance * tanf(halfFovyRad);
+    float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+    WORLD_WIDTH = WORLD_HEIGHT * aspect;
+    
+
     font = LoadFontEx("resources/dogicapixelbold.ttf", FONT_SIZE, 0, 0);
 
     // Music
@@ -70,7 +78,6 @@ void Game::initializeShaders()
     targetBlur1 = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     targetBlur2 = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     // Scene parts
-    background = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     middleground = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     foreground = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -79,7 +86,6 @@ void Game::initializeShaders()
     SetTextureFilter(targetBlur1.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(targetBlur2.texture, TEXTURE_FILTER_BILINEAR);
 
-    SetTextureFilter(background.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(middleground.texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(foreground.texture, TEXTURE_FILTER_BILINEAR);
 
@@ -190,11 +196,14 @@ void Game::update()
 void Game::draw() 
 {    
     drawMiddleground();
-    drawBackground();
+
+    moveBackground();
+    for (int i = 0; i < 2; i ++)
+    {
+        //DrawTextureEx(backgroundTexture[i], backgroundPos[i], 0, 1.0, WHITE);
+    }
 
     BeginMode3D(SceneCamera::camera);
-        DrawBillboard(SceneCamera::camera, background.texture, BACKGROUND_POS, 450.0f, WHITE);
-
         planetManager.drawOtherPlanets();
         
         for (Projectile& proj : projectiles)
@@ -202,7 +211,15 @@ void Game::draw()
             proj.draw();
         }   
 
-        // DrawBillboard(SceneCamera::camera, middleground.texture, MIDDLEGROUND_POS, 1, WHITE);
+        
+        Rectangle src = {
+            0.0f,
+            0.0f,               
+            (float)middleground.texture.width, 
+            -(float)middleground.texture.height   // flipped height
+        };
+
+        DrawBillboardRec(SceneCamera::camera, middleground.texture, src, MIDDLEGROUND_POS, {WORLD_WIDTH, WORLD_HEIGHT}, WHITE);
         
     EndMode3D();
 }
@@ -249,9 +266,9 @@ void Game::drawMiddleground()
                     
                     if (closestObjectToPlayer->checkCollidable())
                     {
-                        DrawModelWires(reticleIn, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.25f, WHITE);
-                        DrawModelWires(reticleMiddle, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.25f, WHITE);
-                        DrawModelWires(reticleOut, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.25f, WHITE);
+                        DrawModelWires(reticleIn, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.04f, WHITE);
+                        DrawModelWires(reticleMiddle, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.04f, WHITE);
+                        DrawModelWires(reticleOut, convertToMiddleCoords(closestObjectToPlayer->getPos()), 0.04f, WHITE);
                     }
                 }
             }
@@ -307,7 +324,7 @@ void Game::drawMiddleground()
         BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
         BeginShaderMode(blurHorizontal);
             // Removed the negative sign on SCREEN_HEIGHT
-            DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT}, {0, 0}, WHITE);
+            DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
         EndShaderMode();
         EndBlendMode();
     EndTextureMode();
@@ -318,7 +335,7 @@ void Game::drawMiddleground()
         BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
         BeginShaderMode(blurVertical);
             // Changed negative height to positive
-            DrawTextureRec(targetBlur1.texture, {0, 0, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT}, {0, 0}, WHITE);
+            DrawTextureRec(targetBlur1.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
         EndShaderMode();
         EndBlendMode();
     EndTextureMode();
@@ -331,18 +348,16 @@ void Game::drawMiddleground()
             // First, draw the normal scene
             BeginBlendMode(BLEND_ALPHA);
                 // Use positive height
-                DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT}, {0, 0}, WHITE);
+                DrawTextureRec(targetScene.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
             EndBlendMode();
 
             // Then, add the glow effect on top using additive blending
             BeginBlendMode(BLEND_ADDITIVE);
                 // Again, change to positive height
-                DrawTextureRec(targetBlur2.texture, {0, 0, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT}, {0, 0}, WHITE);
+                DrawTextureRec(targetBlur2.texture, {0, 0, (float)SCREEN_WIDTH, (float)-SCREEN_HEIGHT}, {0, 0}, WHITE);
             EndBlendMode();
         EndShaderMode();
     EndTextureMode();
-
-    DrawTexture(middleground.texture, 0, 0, WHITE);
 }
 
 void Game::moveBackground()
@@ -356,18 +371,6 @@ void Game::moveBackground()
             backgroundPos[i].x = backgroundTexture[i].width - 10;
         }
     }
-}
-
-void Game::drawBackground()
-{
-    BeginTextureMode(background);
-        moveBackground();
-        for (int i = 0; i < 2; i ++)
-        {
-            DrawTextureEx(backgroundTexture[i], backgroundPos[i], 0, 1.0, WHITE);
-        }
-        // DrawTextureEx(astroidBeltTexture, {0, 0}, 0, 1.0, BLUE );
-    EndTextureMode();
 }
 
 void Game::coreCollection()
@@ -502,21 +505,31 @@ bool Game::CircleCollisions(int t_r1, int t_r2, Vector2 pos1, Vector2 pos2)
 }
 
 
-Vector3 Game::convertToMiddleCoords(Vector2 t_originalCoords)
+Vector3 Game::convertToMiddleCoords(Vector2 t_pos)
 {
-    float normalizedX = normalizeSigned(t_originalCoords.x, 0.0f, SCREEN_WIDTH);
-    float normalizedY = normalizeSigned(t_originalCoords.y, 0.0f, SCREEN_HEIGHT);
-    
-    return {normalizedX * SCREEN_BOUNDS_X, -normalizedY * SCREEN_BOUNDS_Y, MIDDLEGROUND_POS.z};
+    // The Z-depth of your middleground plane
+    const float worldZ = MIDDLEGROUND_POS.z;
+
+    // Normalized Device Coordinates in range [-1, +1]
+    float ndcX = (2.0f * t_pos.x / SCREEN_WIDTH)  - 1.0f;
+    float ndcY =  1.0f - (2.0f * t_pos.y / SCREEN_HEIGHT);
+
+    // Camera center in world space
+    const Vector3& cam = SceneCamera::camera.position;
+
+    // Half‐sizes of your world quad at Z = worldZ
+    const float halfW = WORLD_WIDTH  * 0.5f;
+    const float halfH = WORLD_HEIGHT * 0.5f;
+
+    // Linear mapping from NDC to world X/Y
+    Vector3 worldPos;
+    worldPos.x = cam.x + ndcX * halfW;
+    worldPos.y = cam.y + ndcY * halfH;
+    worldPos.z = worldZ;
+
+    return worldPos;
 }
 
-Vector2 Game::convertToGameCoords(Vector3 t_originalCoords)
-{
-    float normalizedX = Normalize(t_originalCoords.x, -SCREEN_BOUNDS_X, SCREEN_BOUNDS_X);
-    float normalizedY = Normalize(t_originalCoords.y, -SCREEN_BOUNDS_Y, SCREEN_BOUNDS_Y);
-    
-    return {normalizedX * SCREEN_WIDTH, (normalizedY * SCREEN_HEIGHT)};
-}
 
 
 

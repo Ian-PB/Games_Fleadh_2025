@@ -1,9 +1,11 @@
 #include "../include/SceneCamera.h"
 #include <random>
 #include "../include/Globals.h"
+#include <raymath.h>
 
 // 3D Camera
 Camera3D SceneCamera::camera;
+Vector3 SceneCamera::baseTarget;
 
 float SceneCamera::shakeIntensity = 0.0f;
 int SceneCamera::shakeDuration = 0;
@@ -19,6 +21,7 @@ void SceneCamera::initialize()
 {
     camera.position = {SCREEN_WIDTH / 2.0f, (SCREEN_HEIGHT / 2.0f), 10.0f};
     camera.target = {SCREEN_WIDTH / 2.0f, (SCREEN_HEIGHT / 2.0f), 1.0f};     // Looking at the origin
+    baseTarget = camera.target;
     camera.up = {0.0f, 1.0f, 0.0f};          // Y-axis is up
     camera.fovy = 45.0f;                     // Field of view in degrees
     camera.projection = CAMERA_PERSPECTIVE;  // 3D perspective projection
@@ -39,9 +42,7 @@ void SceneCamera::update()
         }
     }
 
-    camera.target.x = offsetX;
-    camera.target.y = offsetY;
-    camera.target.z = offsetZ;
+    camera.target = Vector3Add(baseTarget, { offsetX, offsetY, offsetZ });
 }
 
 void SceneCamera::updateShake()
